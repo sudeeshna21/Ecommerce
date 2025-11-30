@@ -1,7 +1,8 @@
 from rest_framework import serializers
+
+from .helper import generate_discount_code
 from .data import (
-    CARTS, PRODUCTS, ORDERS, DISCOUNTS,
-    DISCOUNT_NTH_ORDER, DISCOUNT_PERCENT,
+    CARTS, DISCOUNT_CODES, N, ORDERS, DISCOUNT_PERCENT,ORDER_COUNTER
 )
 # from ecommerce.settings import DISCOUNT_PERCENT, DISCOUNT_NTH_ORDER
 import uuid
@@ -69,78 +70,62 @@ class CheckoutSerializer(serializers.Serializer):
         discount_code = data.get("discount_code", "")
 
         cart = CARTS.get(user_id)
-        if not cart:
+        if not cart or len(cart) == 0:
             raise serializers.ValidationError("Cart is empty")
 
-        total = sum(PRODUCTS[i]["price"] * q for i, q in cart.items())
-        discount_applied = 0
+        subtotal = sum(item["price"] * item["qty"] for item in cart.values())
+        discount_amount = 0
 
         if discount_code:
-            if discount_code not in DISCOUNTS:
+            if discount_code not in DISCOUNT_CODES:
                 raise serializers.ValidationError("Invalid discount code")
-            if DISCOUNTS[discount_code]["used"]:
+
+            if DISCOUNT_CODES[discount_code]["used"]:
                 raise serializers.ValidationError("Discount code already used")
 
-            discount_applied = total * DISCOUNT_PERCENT
-            total -= discount_applied
+            discount_amount = round((subtotal * DISCOUNT_PERCENT) / 100, 2)
 
-        data["cart"] = cart
-        data["total"] = total
-        data["discount_applied"] = discount_applied
+        total = round(subtotal - discount_amount, 2)
+
+        data.update({
+            "cart": cart,
+            "subtotal": subtotal,
+            "discount_applied": discount_amount,
+            "total": total
+        })
+
         return data
 
     def save(self):
-        from .data import ORDER_COUNTER  # import inside to mutate update-safe
+        global ORDER_COUNTER
 
         user_id = self.validated_data["user_id"]
         cart = self.validated_data["cart"]
+        subtotal = self.validated_data["subtotal"]
+        discount_amount = self.validated_data["discount_applied"]
         total = self.validated_data["total"]
-        discount_code = self.validated_data.get("discount_code", "")
-        discount_applied = self.validated_data["discount_applied"]
+        discount_code = self.validated_data.get("discount_code")
 
-        # Mark discount code as used
         if discount_code:
-            DISCOUNTS[discount_code]["used"] = True
+            DISCOUNT_CODES[discount_code]["used"] = True
 
-        # Save order
-        from .data import ORDERS
         ORDER_COUNTER += 1
 
         order = {
             "order_id": ORDER_COUNTER,
             "user_id": user_id,
-            "items": cart.copy(),
+            "items": list(cart.values()),
+            "subtotal": subtotal,
+            "discount": discount_amount,
             "total": total,
-            "discount_applied": discount_applied,
         }
         ORDERS.append(order)
 
-        CARTS[user_id] = {}  # Clear cart
+        CARTS[user_id] = {}
 
-        return order
+        # Generate a reward coupon every Nth order
+        new_coupon = None
+        if ORDER_COUNTER % N == 0:
+            new_coupon = generate_discount_code()
 
-
-class GenerateDiscountSerializer(serializers.Serializer):
-    def save(self):
-        from .data import ORDER_COUNTER
-        if ORDER_COUNTER % DISCOUNT_NTH_ORDER != 0:
-            raise serializers.ValidationError("Not eligible for discount code")
-
-        code = str(uuid.uuid4())[:8]
-        DISCOUNTS[code] = {"used": False}
-        return code
-
-
-class StatsSerializer(serializers.Serializer):
-    def to_representation(self, instance):
-        total_items = sum(sum(order["items"].values()) for order in ORDERS)
-        total_revenue = sum(order["total"] for order in ORDERS)
-        total_discount = sum(order["discount_applied"] for order in ORDERS)
-
-        return {
-            "total_orders": len(ORDERS),
-            "total_items_purchased": total_items,
-            "total_revenue": total_revenue,
-            "discount_codes": DISCOUNTS,
-            "total_discount_amount": total_discount,
-        }
+        return order, new_coupon

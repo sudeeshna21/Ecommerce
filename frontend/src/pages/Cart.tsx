@@ -10,10 +10,12 @@ import {
   Divider,
 } from "@mui/material";
 import type { CartItem } from "../types/types";
+import { useNavigate } from "react-router-dom";
 
 export default function CartPage() {
   const { cart, refreshCart } = useCart();
-
+  const navigate = useNavigate();
+  
   const handleIncrease = async (item: CartItem) => {
     await updateCartQty(item.id, 1);
     refreshCart();
@@ -145,7 +147,7 @@ export default function CartPage() {
             color="success"
             sx={{ mt: 3, py: 1.2, fontSize: "1rem" }}
             fullWidth
-            onClick={() => alert("Proceeding to checkout")}
+            onClick={() => navigate("/checkout")}
           >
             Proceed to Checkout
           </Button>

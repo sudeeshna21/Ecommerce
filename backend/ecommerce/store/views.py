@@ -5,8 +5,6 @@ from .helper import fetch_products
 from .serializers import (
     AddToCartSerializer,
     CheckoutSerializer,
-    GenerateDiscountSerializer,
-    StatsSerializer,
     UpdateCartSerializer
 )
 from .data import CARTS
@@ -45,26 +43,17 @@ class CheckoutView(GenericAPIView):
     def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        order = serializer.save()
-        return Response({"order": order}, status=status.HTTP_201_CREATED)
+        order, reward_code = serializer.save()
 
+        response_data = {
+            "message": "Order placed successfully!",
+            "order": order
+        }
 
-class GenerateDiscountView(GenericAPIView):
-    serializer_class = GenerateDiscountSerializer
+        if reward_code:
+            response_data["reward_coupon"] = reward_code
 
-    def post(self, request):
-        serializer = self.get_serializer(data={})
-        serializer.is_valid(raise_exception=True)
-        code = serializer.save()
-        return Response({"discount_code": code}, status=status.HTTP_201_CREATED)
-
-
-class StatsView(GenericAPIView):
-    serializer_class = StatsSerializer
-
-    def get(self, request):
-        serializer = self.get_serializer()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(response_data, status=200)
 
 class GetProductsView(GenericAPIView):
     def get(self, request):

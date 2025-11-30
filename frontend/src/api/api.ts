@@ -40,16 +40,14 @@ export async function getCart() {
 }
 
 // CHECKOUT / ORDER
-export const checkout = async (
-  userId: number,
-  discountCode?: string
-): Promise<Order> => {
-  const res = await API.post("/checkout/", {
-    user_id: userId,
-    discount_code: discountCode,
+export const checkoutOrder = async (discount_code?: string) => {
+  const res = await API.post("checkout/", {
+    user_id: 1,
+    discount_code: discount_code || ""
   });
-  return res.data.order;
+  return res.data;
 };
+
 
 // DISCOUNT
 export const generateDiscount = async () => {
