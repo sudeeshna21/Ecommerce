@@ -49,9 +49,8 @@ export const checkoutOrder = async (discount_code?: string) => {
 };
 
 
-// DISCOUNT
-export const generateDiscount = async () => {
-  const res = await API.post("/admin/discount/generate/");
-  return res.data;
+export const getCoupons = async () => {
+  const res = await API.get("coupons/1/");
+  return res.data.coupons;
 };
 

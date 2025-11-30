@@ -7,7 +7,7 @@ from .serializers import (
     CheckoutSerializer,
     UpdateCartSerializer
 )
-from .data import CARTS
+from .data import CARTS, DISCOUNT_CODES
 
 
 class AddToCartView(GenericAPIView):
@@ -59,3 +59,11 @@ class GetProductsView(GenericAPIView):
     def get(self, request):
         products = fetch_products()
         return Response(products)
+    
+class CouponsView(GenericAPIView):
+    def get(self, request, user_id):
+        user_coupons = [
+            {"code": code, "used": info["used"]}
+            for code, info in DISCOUNT_CODES.items()
+        ]
+        return Response({"coupons": user_coupons})

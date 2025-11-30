@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 export default function CartPage() {
   const { cart, refreshCart } = useCart();
   const navigate = useNavigate();
-  
+
   const handleIncrease = async (item: CartItem) => {
     await updateCartQty(item.id, 1);
     refreshCart();
@@ -32,8 +32,11 @@ export default function CartPage() {
   );
 
   return (
-    <Box sx={{ padding: 2 }}>
-      <Typography variant="h5" sx={{ mb: 3, fontWeight: "bold", color: "#222" }}>
+    <Box sx={{ padding: 2, maxWidth: 800, mx: "auto" }}>
+      <Typography
+        variant="h5"
+        sx={{ mb: 3, fontWeight: "bold", color: "#222" }}
+      >
         Your Cart
       </Typography>
 
@@ -47,7 +50,9 @@ export default function CartPage() {
             color: "#555",
           }}
         >
-          🛒 Your cart is empty<br /><br />
+          🛒 Your cart is empty
+          <br />
+          <br />
           Add items from the <strong>Products</strong> tab!
         </Typography>
       ) : (
@@ -60,9 +65,10 @@ export default function CartPage() {
                   display: "flex",
                   alignItems: "center",
                   padding: 2,
-                  background: "#f8f8f8",
-                  borderRadius: 2,
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+                  background:
+                    "linear-gradient(135deg, #fef3c7 0%, #fee2e2 100%)",
+                  borderRadius: 3,
+                  boxShadow: "0 3px 10px rgba(0,0,0,0.08)",
                 }}
               >
                 <CardMedia
@@ -73,6 +79,7 @@ export default function CartPage() {
                     objectFit: "contain",
                     borderRadius: 1,
                     mr: 2,
+                    backgroundColor: "#ffffffaa",
                   }}
                   image={item.image}
                   alt={item.name}
@@ -137,7 +144,12 @@ export default function CartPage() {
 
           <Typography
             variant="h6"
-            sx={{ fontWeight: "bold", fontSize: "1.25rem", color: "#111" }}
+            sx={{
+              fontWeight: "bold",
+              fontSize: "1.25rem",
+              color: "#111",
+              textAlign: "right",
+            }}
           >
             Total: ${total.toFixed(2)}
           </Typography>
@@ -145,20 +157,17 @@ export default function CartPage() {
           <Button
             variant="contained"
             color="success"
-            sx={{ mt: 3, py: 1.2, fontSize: "1rem" }}
+            sx={{
+              mt: 3,
+              py: 1.2,
+              fontSize: "1rem",
+              textTransform: "none",
+              borderRadius: 2,
+            }}
             fullWidth
             onClick={() => navigate("/checkout")}
           >
             Proceed to Checkout
-          </Button>
-
-          <Button
-            variant="outlined"
-            sx={{ mt: 1.5, py: 1.2, fontSize: "1rem" }}
-            fullWidth
-            onClick={() => alert("Apply Discount Coming Soon!")}
-          >
-            Apply Discount Code
           </Button>
         </>
       )}
