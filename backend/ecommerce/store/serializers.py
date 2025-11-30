@@ -3,28 +3,61 @@ from .data import (
     CARTS, PRODUCTS, ORDERS, DISCOUNTS,
     DISCOUNT_NTH_ORDER, DISCOUNT_PERCENT,
 )
-from ecommerce.settings import DISCOUNT_PERCENT, DISCOUNT_NTH_ORDER
+# from ecommerce.settings import DISCOUNT_PERCENT, DISCOUNT_NTH_ORDER
 import uuid
+import requests
 
 class AddToCartSerializer(serializers.Serializer):
     user_id = serializers.IntegerField()
     item_id = serializers.IntegerField()
     quantity = serializers.IntegerField(min_value=1)
 
-    def validate(self, data):
-        if data["item_id"] not in PRODUCTS:
-            raise serializers.ValidationError("Invalid item_id")
-        return data
-
     def save(self):
         user_id = self.validated_data["user_id"]
         item_id = self.validated_data["item_id"]
         qty = self.validated_data["quantity"]
 
-        user_cart = CARTS.setdefault(user_id, {})
-        user_cart[item_id] = user_cart.get(item_id, 0) + qty
+        # Fetch product from FakeStore API
+        product_url = f"https://fakestoreapi.com/products/{item_id}"
+        product = requests.get(product_url).json()
 
-        return user_cart
+        user_cart = CARTS.setdefault(user_id, {})
+
+        if item_id in user_cart:
+            user_cart[item_id]["qty"] += qty
+        else:
+            user_cart[item_id] = {
+                "id": product["id"],
+                "name": product["title"],
+                "price": product["price"],
+                "image": product["image"],
+                "qty": qty,
+            }
+
+        return list(user_cart.values())
+
+
+class UpdateCartSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
+    item_id = serializers.IntegerField()
+    quantity = serializers.IntegerField()  # allow negative too
+
+    def save(self):
+        user_id = self.validated_data["user_id"]
+        item_id = self.validated_data["item_id"]
+        qty_change = self.validated_data["quantity"]
+
+        user_cart = CARTS.setdefault(user_id, {})
+
+        if item_id not in user_cart:
+            raise serializers.ValidationError("Item not in cart")
+
+        user_cart[item_id]["qty"] += qty_change
+
+        if user_cart[item_id]["qty"] <= 0:
+            del user_cart[item_id]  # REMOVE item instead of erroring
+
+        return list(user_cart.values())
 
 
 class CheckoutSerializer(serializers.Serializer):

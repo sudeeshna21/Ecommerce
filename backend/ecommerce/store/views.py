@@ -1,13 +1,15 @@
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import status
+from .helper import fetch_products
 from .serializers import (
     AddToCartSerializer,
     CheckoutSerializer,
     GenerateDiscountSerializer,
-    StatsSerializer
+    StatsSerializer,
+    UpdateCartSerializer
 )
-from .storage.cart import CARTS
+from .data import CARTS
 
 
 class AddToCartView(GenericAPIView):
@@ -19,15 +21,22 @@ class AddToCartView(GenericAPIView):
         cart = serializer.save()
         return Response({"cart": cart}, status=status.HTTP_200_OK)
 
+class UpdateCartQtyView(GenericAPIView):
+    serializer_class = UpdateCartSerializer
+
+    def put(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        cart = serializer.save()
+        return Response({"cart": cart}, status=200)
+
 
 class CartView(GenericAPIView):
     def get(self, request):
-        user_id = request.query_params.get("user_id")
-        if not user_id:
-            return Response({"error": "Missing user_id"}, status=400)
+        user_id = 1  # hardcoding single user for now
+        cart = CARTS.get(user_id, {})
+        return Response({"cart": list(cart.values())}, status=status.HTTP_200_OK)
 
-        cart = CARTS.get(int(user_id), {})
-        return Response({"cart": cart}, status=status.HTTP_200_OK)
 
 
 class CheckoutView(GenericAPIView):
@@ -56,3 +65,8 @@ class StatsView(GenericAPIView):
     def get(self, request):
         serializer = self.get_serializer()
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class GetProductsView(GenericAPIView):
+    def get(self, request):
+        products = fetch_products()
+        return Response(products)

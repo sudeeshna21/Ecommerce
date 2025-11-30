@@ -1,45 +1,66 @@
 import { useEffect, useState } from "react";
+import { addToCart, getProducts } from "../api/api";
 import type { Product } from "../types/types";
-import { fetchProducts, addToCart } from "../api/api";
 import {
-  Box,
   Button,
   Card,
   CardContent,
-  Stack,
+  CardMedia,
   Typography,
+  Box
 } from "@mui/material";
+import { useCart } from "../context/CartContext";
 
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
-  const USER_ID = 1;
+  const { refreshCart } = useCart();
 
   useEffect(() => {
-    fetchProducts().then(setProducts);
+    getProducts().then(setProducts).catch(console.error);
   }, []);
 
+  const handleAddToCart = async (product: Product) => {
+    await addToCart(product.id);
+    refreshCart();
+  };
+
   return (
-    <Box p={3}>
-      <Typography variant="h4" mb={2}>Products</Typography>
+    <Box>
+      <Typography variant="h5" sx={{ mb: 2 }}>
+        Products
+      </Typography>
 
-      <Stack spacing={2}>
-        {products.map((item) => (
-          <Card key={item.id}>
+      <Box
+        sx={{
+          display: "grid",
+          gap: 2,
+          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" },
+        }}
+      >
+        {products.map((p) => (
+          <Card key={p.id}>
+            <CardMedia
+              component="img"
+              height="200"
+              image={p.image}
+              alt={p.name}
+              sx={{ objectFit: "contain", p: 1 }}
+            />
             <CardContent>
-              <Typography variant="h6">{item.name}</Typography>
-              <Typography color="text.secondary">₹{item.price}</Typography>
-
+              <Typography variant="subtitle1">{p.name}</Typography>
+              <Typography variant="h6">${p.price}</Typography>
               <Button
+                fullWidth
                 variant="contained"
                 sx={{ mt: 1 }}
-                onClick={() => addToCart(USER_ID, item.id)}
+                onClick={() => handleAddToCart(p)}
               >
                 Add to Cart
               </Button>
             </CardContent>
           </Card>
         ))}
-      </Stack>
+      </Box>
     </Box>
   );
 }

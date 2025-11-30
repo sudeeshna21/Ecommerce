@@ -9,29 +9,35 @@ const API = axios.create({
 });
 
 // PRODUCTS
-export const fetchProducts = async (): Promise<Product[]> => {
-  const res = await API.get("/products/");
-  return Object.entries(res.data.products).map(([id, item]: any) => ({
-    id: Number(id),
-    name: item.name,
-    price: item.price,
-  }));
-};
+export async function getProducts(): Promise<Product[]> {
+  const res = await API.get("products/");
+  return res.data; 
+}
 
 // CART
-export const fetchCart = async (userId: number): Promise<Cart> => {
-  const res = await API.get(`/cart/?user_id=${userId}`);
-  return res.data.cart;
-};
-
-export const addToCart = async (userId: number, itemId: number) => {
-  const res = await API.post("/cart/add/", {
-    user_id: userId,
-    item_id: itemId,
+export async function addToCart(product_id: number) {
+  const res = await API.post("cart/add/", {
+    user_id: 1,
+    item_id: product_id,
     quantity: 1,
   });
   return res.data;
-};
+}
+
+export async function updateCartQty(product_id: number, change: number) {
+  const res = await API.put("cart/update/", {
+    user_id: 1,
+    item_id: product_id,
+    quantity: change, 
+  });
+  return res.data.cart;
+}
+
+
+export async function getCart() {
+  const res = await API.get("cart/");
+  return res.data.cart;
+}
 
 // CHECKOUT / ORDER
 export const checkout = async (
