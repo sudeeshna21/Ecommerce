@@ -1,17 +1,28 @@
-import { AppBar, Toolbar, Button } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Tabs, Tab, Box } from "@mui/material";
+import { useNavigate, useLocation } from "react-router-dom";
 
-export default function Navbar() {
+export default function TabNavigation() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const tabIndex = {
+    "/": 0,
+    "/cart": 1,
+    "/checkout": 2,
+  }[location.pathname] ?? 0;
+
+  const handleChange = (e: any, newValue: number) => {
+    const paths = ["/", "/cart", "/checkout"];
+    navigate(paths[newValue]);
+  };
+
   return (
-    <AppBar position="static">
-      <Toolbar>
-        <Button color="inherit" component={Link} to="/">
-          Products
-        </Button>
-        <Button color="inherit" component={Link} to="/cart">
-          Cart
-        </Button>
-      </Toolbar>
-    </AppBar>
+    <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+      <Tabs value={tabIndex} onChange={handleChange}>
+        <Tab label="Products" />
+        <Tab label="Cart" />
+        <Tab label="Checkout" />
+      </Tabs>
+    </Box>
   );
 }
